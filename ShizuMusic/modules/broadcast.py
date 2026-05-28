@@ -13,6 +13,7 @@ from pyrogram.errors import (
     FloodWait,
     UserIsBlocked,
 )
+
 from pyrogram.types import Message
 
 import config
@@ -24,9 +25,13 @@ from ShizuMusic import bot
 # ─────────────────────────────────────────────
 
 @bot.on_message(
-    filters.private
-    | filters.group
-    | filters.supergroup
+    (
+        filters.private
+        | filters.group
+        | filters.supergroup
+    )
+    & ~filters.service
+    & ~filters.command("broadcast")
 )
 async def save_chat(_, message: Message):
 
@@ -127,19 +132,19 @@ async def broadcast_cmd(_, message: Message):
 
     for doc in all_chats:
 
-        cid = int(doc["chat_id"])
-
-        chat_type = doc.get(
-            "type",
-            "group",
-        )
-
         try:
 
+            cid = int(doc["chat_id"])
+
+            chat_type = doc.get(
+                "type",
+                "group",
+            )
+
             sent = await bot.forward_messages(
-                cid,
-                bm.chat.id,
-                bm.id,
+                chat_id=cid,
+                from_chat_id=bm.chat.id,
+                message_ids=bm.id,
             )
 
             if chat_type == "group":
@@ -174,18 +179,35 @@ async def broadcast_cmd(_, message: Message):
 
             try:
 
-                await bot.forward_messages(
-                    cid,
-                    bm.chat.id,
-                    bm.id,
+                sent = await bot.forward_messages(
+                    chat_id=cid,
+                    from_chat_id=bm.chat.id,
+                    message_ids=bm.id,
                 )
 
                 if chat_type == "group":
+
                     success_groups += 1
+
+                    try:
+
+                        await bot.pin_chat_message(
+                            cid,
+                            sent.id,
+                            disable_notification=True,
+                        )
+
+                        pinned += 1
+
+                    except Exception:
+                        pass
+
                 else:
+
                     success_users += 1
 
             except Exception:
+
                 failed += 1
 
         except (
@@ -193,7 +215,10 @@ async def broadcast_cmd(_, message: Message):
             ChatWriteForbidden,
         ):
 
-            remove_broadcast_chat(cid)
+            try:
+                remove_broadcast_chat(cid)
+            except Exception:
+                pass
 
             failed += 1
 
