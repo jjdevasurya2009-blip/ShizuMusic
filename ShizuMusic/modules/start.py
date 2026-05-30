@@ -14,7 +14,6 @@ from pyrogram.enums import ChatType, ParseMode
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 import config
-from config import START_ANIMATIONS
 from ShizuMusic import bot
 from ShizuMusic.modules.block import user_allowed
 from ShizuMusic.utils.db import add_broadcast_chat, add_served_chat, add_served_user
@@ -27,22 +26,6 @@ EFFECT_ID = [
     5159385139981059251,
 ]
 
-# ── Auto-delete delay (seconds) ───────────────────────────────────────────────
-AUTO_DELETE_DELAY = 2  # 5 minutes — change as needed
-
-
-# ── Auto-delete helper ─────────────────────────────────────────────────────────
-
-async def _auto_delete(*messages, delay: int = AUTO_DELETE_DELAY) -> None:
-    """Delete messages after a delay silently."""
-    await asyncio.sleep(delay)
-    for m in messages:
-        try:
-            await m.delete()
-        except Exception:
-            pass
-
-
 # ── /start ────────────────────────────────────────────────────────────────────
 
 @bot.on_message(filters.command("start") & user_allowed)
@@ -53,6 +36,12 @@ async def start_handler(_, message: Message) -> None:
     chat_id   = message.chat.id
     chat_type = message.chat.type
     animation = random.choice(START_ANIMATIONS)
+
+    # ── Delete the user's /start command message ──────────────────────────────
+    try:
+        await message.delete()
+    except Exception:
+        pass
 
     try:
         add_served_user(uid)
@@ -103,9 +92,6 @@ async def start_handler(_, message: Message) -> None:
             message_effect_id=random.choice(EFFECT_ID),
         )
 
-        # Auto-delete original /start command + bot reply
-        asyncio.create_task(_auto_delete(message, sent))
-
         try:
             add_broadcast_chat(chat_id, "private")
         except Exception:
@@ -150,9 +136,6 @@ async def start_handler(_, message: Message) -> None:
             reply_markup=kb,
         )
 
-        # Auto-delete /start + bot reply in groups
-        asyncio.create_task(_auto_delete(message, sent))
-
         admin_msg = (
             "<b>╭──────────────────────▣</b>\n"
             "<b>│❍ ᴛʜᴀɴᴋs ғᴏʀ ᴀᴅᴅɪɴɢ ᴍᴇ! 🥀</b>\n"
@@ -180,8 +163,6 @@ async def start_handler(_, message: Message) -> None:
                 parse_mode=ParseMode.HTML,
                 reply_markup=admin_kb,
             )
-            # Auto-delete admin request message too
-            asyncio.create_task(_auto_delete(admin_sent))
         except Exception:
             pass
 
@@ -198,6 +179,12 @@ async def help_handler(_, message: Message) -> None:
 
     uid  = message.from_user.id
     name = message.from_user.first_name or "User"
+
+    # ── Delete the user's /help command message ───────────────────────────────
+    try:
+        await message.delete()
+    except Exception:
+        pass
 
     kb = InlineKeyboardMarkup([
         [
@@ -237,6 +224,3 @@ async def help_handler(_, message: Message) -> None:
         parse_mode=ParseMode.HTML,
         reply_markup=kb,
     )
-
-    # Auto-delete /help command + bot reply
-    asyncio.create_task(_auto_delete(message, sent))
