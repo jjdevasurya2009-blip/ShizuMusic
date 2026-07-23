@@ -1,6 +1,7 @@
 # ── Youtube Song Search ─────────────────────
 py-yt-search==0.6.2
 yt-dlp
+pyrogram
 
 # ── Voice Chat Streaming ─────────────────
 py-tgcalls==2.2.11
