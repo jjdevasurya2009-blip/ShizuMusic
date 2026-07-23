@@ -8,7 +8,6 @@ WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-# Add this line to actually install your dependencies:
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
